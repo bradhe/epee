@@ -7,22 +7,22 @@ import (
 	"time"
 )
 
-type KafkaStream interface {
+type kafkaStream interface {
 	// Close all resources associated with this thing.
 	Close()
 
 	// Returns a channel of messages to consume based on the client ID.
-	Consume(topic string, partition int, offset int64) (*StreamConsumer, error)
+	Consume(topic string, partition int, offset int64) (*streamConsumer, error)
 
 	// Given a consumer, gracefully stops it.
-	CancelConsumer(*StreamConsumer) error
+	CancelConsumer(*streamConsumer) error
 }
 
 type kafkaStreamImpl struct {
 	sync.Mutex
 
 	// A list of stream consumers that have been created.
-	consumers map[*StreamConsumer]bool
+	consumers map[*streamConsumer]bool
 
 	// Indicates to child processes that we should continue running.
 	closing bool
@@ -37,7 +37,7 @@ type kafkaStreamImpl struct {
 	zk ZookeeperClient
 }
 
-func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*StreamConsumer, error) {
+func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*streamConsumer, error) {
 	// If the stream is in the process of closing we don't want to start a new
 	// consumer.
 	if ks.closing {
@@ -82,7 +82,7 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 	return consumer, nil
 }
 
-func (ks *kafkaStreamImpl) CancelConsumer(sc *StreamConsumer) error {
+func (ks *kafkaStreamImpl) CancelConsumer(sc *streamConsumer) error {
 	ks.Lock()
 	defer ks.Unlock()
 
@@ -113,7 +113,7 @@ func (ks *kafkaStreamImpl) Close() {
 	ks.consumer.Close()
 }
 
-func NewKafkaStream(clientID string, zk ZookeeperClient) (KafkaStream, error) {
+func NewKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
 	brokers, err := findRegisteredBrokers(zk)
 
 	if err != nil {
@@ -137,7 +137,7 @@ func NewKafkaStream(clientID string, zk ZookeeperClient) (KafkaStream, error) {
 	stream := new(kafkaStreamImpl)
 	stream.client = client
 	stream.consumer = consumer
-	stream.consumers = make(map[*StreamConsumer]bool)
+	stream.consumers = make(map[*streamConsumer]bool)
 
 	return stream, nil
 }

@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type StreamConsumer struct {
+type streamConsumer struct {
 	// Indicates whether or not we should kill this.
 	closing bool
 
@@ -20,7 +20,7 @@ type StreamConsumer struct {
 	dst chan Message
 }
 
-func (sc *StreamConsumer) run() {
+func (sc *streamConsumer) run() {
 	// Always make sure these guys get taken care of when we exit this function.
 	defer func() {
 		close(sc.dst)
@@ -56,16 +56,16 @@ func (sc *StreamConsumer) run() {
 	}
 }
 
-func (sc *StreamConsumer) Messages() <-chan Message {
+func (sc *streamConsumer) Messages() <-chan Message {
 	return sc.dst
 }
 
-func (sc *StreamConsumer) Start() {
+func (sc *streamConsumer) Start() {
 	sc.wg.Add(1)
 	go sc.run()
 }
 
-func (sc *StreamConsumer) Close() {
+func (sc *streamConsumer) Close() {
 	// Signal that it's time for this guy to stop.
 	sc.closing = true
 
@@ -73,8 +73,8 @@ func (sc *StreamConsumer) Close() {
 	sc.wg.Wait()
 }
 
-func newStreamConsumer(ch chan Message, partitionConsumer sarama.PartitionConsumer) *StreamConsumer {
-	sc := new(StreamConsumer)
+func newStreamConsumer(ch chan Message, partitionConsumer sarama.PartitionConsumer) *streamConsumer {
+	sc := new(streamConsumer)
 	sc.dst = ch
 	sc.partitionConsumer = partitionConsumer
 	return sc

@@ -34,13 +34,14 @@ type Stream struct {
 	// The zookeeper cluster our service is connecting to.
 	zk ZookeeperClient
 
-	ks KafkaStream
+	// A stream of events in Kafka
+	ks kafkaStream
 
 	// The ID of the client. We'll use this for storing data elsewhere.
 	clientID string
 
 	// All the consumers that were created during this stream's lifecycle.
-	consumers map[string]*StreamConsumer
+	consumers map[string]*streamConsumer
 
 	// All the proxies created during this stream's lifecycle.
 	proxies map[string]*streamProcessorProxy
@@ -194,7 +195,7 @@ func NewStream(clientID string, zk ZookeeperClient) (*Stream, error) {
 	return stream, nil
 }
 
-func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks KafkaStream) (*Stream, error) {
+func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks kafkaStream) (*Stream, error) {
 	stream := new(Stream)
 	stream.zk = zk
 	stream.ks = ks
@@ -202,7 +203,7 @@ func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks KafkaStrea
 
 	stream.types = make(map[string]reflect.Type)
 	stream.proxies = make(map[string]*streamProcessorProxy)
-	stream.consumers = make(map[string]*StreamConsumer)
+	stream.consumers = make(map[string]*streamConsumer)
 
 	// Start monitoring the (currently empty) proxy list for changes.
 	go stream.runProxyMonitor()

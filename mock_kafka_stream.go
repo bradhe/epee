@@ -5,7 +5,7 @@ import (
 	"github.com/Shopify/sarama/mocks"
 )
 
-func newMockKafkaStream(t mocks.ErrorReporter, clientID string, zk ZookeeperClient) (KafkaStream, *mocks.Consumer) {
+func newMockKafkaStream(t mocks.ErrorReporter, clientID string, zk ZookeeperClient) (kafkaStream, *mocks.Consumer) {
 	config := sarama.NewConfig()
 	config.ClientID = clientID
 
@@ -14,7 +14,7 @@ func newMockKafkaStream(t mocks.ErrorReporter, clientID string, zk ZookeeperClie
 	stream := new(kafkaStreamImpl)
 	stream.client = nil
 	stream.consumer = consumer
-	stream.consumers = make(map[*StreamConsumer]bool)
+	stream.consumers = make(map[*streamConsumer]bool)
 
 	return stream, consumer
 }
