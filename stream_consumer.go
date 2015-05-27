@@ -73,7 +73,7 @@ func (sc *StreamConsumer) Close() {
 	sc.wg.Wait()
 }
 
-func NewStreamConsumer(ch chan Message, partitionConsumer sarama.PartitionConsumer) *StreamConsumer {
+func newStreamConsumer(ch chan Message, partitionConsumer sarama.PartitionConsumer) *StreamConsumer {
 	sc := new(StreamConsumer)
 	sc.dst = ch
 	sc.partitionConsumer = partitionConsumer

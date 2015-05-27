@@ -74,7 +74,7 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 	}
 
 	ch := make(chan Message, 0)
-	consumer := NewStreamConsumer(ch, partitionConsumer)
+	consumer := newStreamConsumer(ch, partitionConsumer)
 
 	// We have to acquire the lock to modify the map.
 	ks.Lock()
