@@ -5,7 +5,7 @@ import (
 	"github.com/Shopify/sarama/mocks"
 )
 
-func NewMockKafkaStream(t mocks.ErrorReporter, clientID string, zk ZookeeperClient) (KafkaStream, *mocks.Consumer) {
+func newMockKafkaStream(t mocks.ErrorReporter, clientID string, zk ZookeeperClient) (KafkaStream, *mocks.Consumer) {
 	config := sarama.NewConfig()
 	config.ClientID = clientID
 

@@ -15,7 +15,7 @@ func contains(strs []string, str string) bool {
 }
 
 func TestSetAndGetReturnsPrimitivesCorrectly(t *testing.T) {
-	mock := NewMockZookeeperClient()
+	mock := newMockZookeeperClient()
 	err := mock.Set("/hello/world", 1)
 
 	if err != nil {
@@ -35,7 +35,7 @@ func TestSetAndGetReturnsPrimitivesCorrectly(t *testing.T) {
 }
 
 func TestSetAndGetReturnsTypesCorrectly(t *testing.T) {
-	mock := NewMockZookeeperClient()
+	mock := newMockZookeeperClient()
 	err := mock.Set("/hello/world", "Hello, World!")
 
 	if err != nil {
@@ -55,7 +55,7 @@ func TestSetAndGetReturnsTypesCorrectly(t *testing.T) {
 }
 
 func TestListReturnsPathsToChildren(t *testing.T) {
-	mock := NewMockZookeeperClient()
+	mock := newMockZookeeperClient()
 	err := mock.Set("/hello/mother", 1)
 
 	if err != nil {
@@ -88,7 +88,7 @@ func TestListReturnsPathsToChildren(t *testing.T) {
 }
 
 func TestListReturnsPathsToChildrenWhenThereIsASuffixSlash(t *testing.T) {
-	mock := NewMockZookeeperClient()
+	mock := newMockZookeeperClient()
 	err := mock.Set("/hello/mother", 1)
 
 	if err != nil {

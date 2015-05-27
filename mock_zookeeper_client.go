@@ -6,11 +6,11 @@ import (
 	"path"
 )
 
-type MockZookeeperClient struct {
+type mockZookeeperClient struct {
 	paths map[string][]byte
 }
 
-func (zk *MockZookeeperClient) List(prefix string) ([]string, error) {
+func (zk *mockZookeeperClient) List(prefix string) ([]string, error) {
 	if prefix == "" {
 		return []string{}, nil
 	}
@@ -33,7 +33,7 @@ func (zk *MockZookeeperClient) List(prefix string) ([]string, error) {
 	return paths, nil
 }
 
-func (zk *MockZookeeperClient) Get(path string, i interface{}) error {
+func (zk *mockZookeeperClient) Get(path string, i interface{}) error {
 	bytes, ok := zk.paths[path]
 
 	if !ok {
@@ -48,7 +48,7 @@ func (zk *MockZookeeperClient) Get(path string, i interface{}) error {
 	return nil
 }
 
-func (zk *MockZookeeperClient) Set(path string, i interface{}) error {
+func (zk *mockZookeeperClient) Set(path string, i interface{}) error {
 	log.Printf("ZK: Setting %s to %v", path, i)
 	bytes, err := json.Marshal(i)
 
@@ -59,8 +59,8 @@ func (zk *MockZookeeperClient) Set(path string, i interface{}) error {
 	return err
 }
 
-func NewMockZookeeperClient() ZookeeperClient {
-	zk := new(MockZookeeperClient)
+func newMockZookeeperClient() ZookeeperClient {
+	zk := new(mockZookeeperClient)
 	zk.paths = make(map[string][]byte)
 	return zk
 }

@@ -18,8 +18,8 @@ func TestSyncsStreamPositionOnSuccessfulFlush(t *testing.T) {
 		t.Fatalf("Expected no error marshalling test message, got %v", err)
 	}
 
-	zk := NewMockZookeeperClient()
-	ks, consumer := NewMockKafkaStream(t, "test-client-1", zk)
+	zk := newMockZookeeperClient()
+	ks, consumer := newMockKafkaStream(t, "test-client-1", zk)
 
 	// Set up expectations for Kafka.
 	pc := consumer.ExpectConsumePartition("topic-1", 1, sarama.OffsetOldest)
@@ -85,10 +85,10 @@ func TestPicksUpFromLastFlush(t *testing.T) {
 		t.Fatalf("Expected no error marshalling test message, got %v", err)
 	}
 
-	zk := NewMockZookeeperClient()
+	zk := newMockZookeeperClient()
 	zk.Set(fullPath, int64(123456))
 
-	ks, consumer := NewMockKafkaStream(t, "test-client-1", zk)
+	ks, consumer := newMockKafkaStream(t, "test-client-1", zk)
 
 	// Set up expectations in kafak. Big thing here is that the offset should be
 	// 1 after the offset stored in ZK.

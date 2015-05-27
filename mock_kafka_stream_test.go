@@ -6,8 +6,8 @@ import (
 )
 
 func TestMockKafkaStreamsReturnDataFromChannel(t *testing.T) {
-	zk := NewMockZookeeperClient()
-	kafka, consumer := NewMockKafkaStream(t, "client-1", zk)
+	zk := newMockZookeeperClient()
+	kafka, consumer := newMockKafkaStream(t, "client-1", zk)
 	pc := consumer.ExpectConsumePartition("my-topic", 1, sarama.OffsetOldest)
 
 	pc.YieldMessage(&sarama.ConsumerMessage{
