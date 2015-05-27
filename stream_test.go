@@ -31,7 +31,7 @@ func TestSyncsStreamPositionOnSuccessfulFlush(t *testing.T) {
 		Offset:    int64(1),
 	})
 
-	stream, err := NewStreamFromKafkaStream("test-client-1", zk, ks)
+	stream, err := newStreamWithKafkaStream("test-client-1", zk, ks)
 
 	if err != nil {
 		t.Errorf("Failed to instantiate stream. Got %v", err)
@@ -102,7 +102,7 @@ func TestPicksUpFromLastFlush(t *testing.T) {
 	})
 
 	// Okay now we can try all this stuff.
-	stream, err := NewStreamFromKafkaStream("test-client-1", zk, ks)
+	stream, err := newStreamWithKafkaStream("test-client-1", zk, ks)
 
 	if err != nil {
 		t.Errorf("Failed to instantiate stream. Got %v", err)

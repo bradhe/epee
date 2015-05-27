@@ -183,7 +183,7 @@ func (q *Stream) Wait() {
 	wg.Wait()
 }
 
-func NewStreamFromZookeeper(clientID string, zk ZookeeperClient) (*Stream, error) {
+func NewStream(clientID string, zk ZookeeperClient) (*Stream, error) {
 	ks, err := NewKafkaStream(clientID, zk)
 
 	if err != nil {
@@ -199,7 +199,7 @@ func NewStreamFromZookeeper(clientID string, zk ZookeeperClient) (*Stream, error
 	return stream, nil
 }
 
-func NewStreamFromKafkaStream(clientID string, zk ZookeeperClient, ks KafkaStream) (*Stream, error) {
+func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks KafkaStream) (*Stream, error) {
 	stream := new(Stream)
 	stream.zk = zk
 	stream.ks = ks

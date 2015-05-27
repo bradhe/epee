@@ -109,7 +109,7 @@ func init() {
   }
   
   // Assuming your Kafka brokers are registered in Zookeeper...
-  stream, err = epee.NewStreamFromZookeeper(DefaultClientID, zk)
+  stream, err = epee.NewStream(DefaultClientID, zk)
 
   if err != nil {
     panic(err)
