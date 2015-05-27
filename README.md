@@ -102,7 +102,7 @@ func (sp *MyStreamProcessor) Flush() error {
 func init() {
   flag.Parse()
 
-  zk, err := epee.NewZookeeperClient(*MyZookeeperServer)
+  zk, err := epee.NewZookeeperClient(*ZookeeperHost)
 
   if err != nil {
     panic(err)
@@ -122,7 +122,7 @@ func init() {
 func main() {
   stream.Stream(TopicName, Partition, &MyStreamProcessor{})
 
-	// The stream processor is now running in a goroutine in the background. The
+  // The stream processor is now running in a goroutine in the background. The
   // main thread can continue doing whatever, or we can just sit here and wait.
   stream.Wait()
 }
