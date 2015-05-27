@@ -13,9 +13,9 @@ checkout:
 dependencies:
   pre:
     - make setup:
-        pwd: /home/ubuntu/src/github.com/bradhe/epee
+        pwd: ../src/github.com/bradhe/epee
 
 test:
   override:
     - make test:
-        pwd: /home/ubuntu/src/github.com/bradhe/epee
+        pwd: ../src/github.com/bradhe/epee
