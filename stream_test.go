@@ -53,7 +53,7 @@ func TestSyncsStreamPositionOnSuccessfulFlush(t *testing.T) {
 	wg.Wait()
 
 	// Now let's try to flush. Should be dirty.
-	stream.FlushAll()
+	stream.flushAll()
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

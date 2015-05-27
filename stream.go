@@ -150,7 +150,7 @@ func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error
 	return err
 }
 
-func (q *Stream) FlushAll() {
+func (q *Stream) flushAll() {
 	for key, proxy := range q.proxies {
 		if proxy.Dirty() {
 			err := proxy.Flush()
@@ -170,7 +170,7 @@ func (q *Stream) FlushAll() {
 func (q *Stream) runProxyMonitor() {
 	// We run this for forever.
 	for {
-		q.FlushAll()
+		q.flushAll()
 
 		// Now let's sleep before we look for more!
 		<-time.After(DefaultMonitorTimeout)
