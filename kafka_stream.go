@@ -1,15 +1,10 @@
 package epee
 
 import (
-	"errors"
 	"github.com/Shopify/sarama"
 	"log"
 	"sync"
 	"time"
-)
-
-var (
-	ErrStreamClosing = errors.New("stream closing")
 )
 
 type KafkaStream interface {

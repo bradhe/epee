@@ -1,8 +1,15 @@
 package epee
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Shopify/sarama"
+)
+
+var (
+	ErrDecodingMessageFailed = errors.New("message decoding failed")
+	ErrNotFound              = errors.New("not found")
+	ErrStreamClosing         = errors.New("stream closing")
 )
 
 func findRegisteredBrokers(zk ZookeeperClient) ([]string, error) {

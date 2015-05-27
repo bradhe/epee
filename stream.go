@@ -1,7 +1,6 @@
 package epee
 
 import (
-	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"log"
@@ -9,10 +8,6 @@ import (
 	"reflect"
 	"sync"
 	"time"
-)
-
-var (
-	ErrDecodingMessageFailed = errors.New("message decoding failed")
 )
 
 const (

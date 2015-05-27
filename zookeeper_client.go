@@ -2,7 +2,6 @@ package epee
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/samuel/go-zookeeper/zk"
 	"log"
 	"math"
@@ -15,8 +14,6 @@ import (
 var (
 	// This is just blindly passed in to the ZK client.
 	DefaultSessionTimeout = 1 * time.Second
-
-	ErrNotFound = errors.New("not found")
 )
 
 type ZookeeperClient interface {
