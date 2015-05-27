@@ -40,7 +40,7 @@ follows.
 Here's the basic example code. You can also [view it in the example
 repo](https://github.com/bradhe/epee-example) if you want.
 
-```golang
+```go
 package main
 
 import (
