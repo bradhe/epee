@@ -1,11 +1,21 @@
 machine:
   timezone:
     America/Los_Angeles
+  environment:
+    GOPATH: /home/ubuntu
+
+checkout:
+  pre:
+    - mkdir -p /home/ubuntu/src/github.com/bradhe
+  override:
+    - git clone git@github.com:bradhe/epee.git /home/ubuntu/src/github.com/bradhe/epee
 
 dependencies:
   pre:
-    - make setup
+    - make setup:
+        pwd: /home/ubuntu/src/github.com/bradhe/epee
 
 test:
   override:
-    - make test
+    - make test:
+        pwd: /home/ubuntu/src/github.com/bradhe/epee
