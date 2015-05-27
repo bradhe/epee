@@ -1,6 +1,8 @@
 Epee
 ===
 
+Build: [![Circle CI](https://circleci.com/gh/bradhe/epee.svg?style=svg)](https://circleci.com/gh/bradhe/epee)
+
 A (very) simple golang stream processing library built on top of Kafka and
 protobuf. It is assumed that only one message type lives in a given Kafka
 topic.
