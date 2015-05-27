@@ -125,11 +125,7 @@ func NewKafkaStream(clientID string, zk ZookeeperClient) (KafkaStream, error) {
 		return nil, err
 	}
 
-	// TODO: Any options for Sarama?
-	config := sarama.NewConfig()
-	config.ClientID = clientID
-
-	client, err := sarama.NewClient(brokers, config)
+	client, err := sarama.NewClient(brokers, getConfig(clientID))
 
 	if err != nil {
 		return nil, err
@@ -139,6 +135,7 @@ func NewKafkaStream(clientID string, zk ZookeeperClient) (KafkaStream, error) {
 	consumer, err := sarama.NewConsumerFromClient(client)
 
 	if err != nil {
+		client.Close()
 		return nil, err
 	}
 

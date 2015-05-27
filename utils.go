@@ -2,6 +2,7 @@ package epee
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 )
 
 func findRegisteredBrokers(zk ZookeeperClient) ([]string, error) {
@@ -25,4 +26,15 @@ func findRegisteredBrokers(zk ZookeeperClient) ([]string, error) {
 	}
 
 	return fullPaths, nil
+}
+
+func getConfig(clientID string) *sarama.Config {
+	config := sarama.NewConfig()
+	config.Producer.Compression = sarama.CompressionSnappy
+	config.ClientID = clientID
+	config.Producer.Partitioner = func(topic string) sarama.Partitioner {
+		return sarama.NewHashPartitioner(topic)
+	}
+
+	return config
 }
