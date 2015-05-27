@@ -98,7 +98,7 @@ func (sp *MyStreamProcessor) Flush() error {
 }
 
 func init() {
-  var err error
+  flag.Parse()
 
   zk, err := epee.NewZookeeperClient(*MyZookeeperServer)
 
