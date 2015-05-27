@@ -180,7 +180,7 @@ func (q *Stream) Wait() {
 }
 
 func NewStream(clientID string, zk ZookeeperClient) (*Stream, error) {
-	ks, err := NewKafkaStream(clientID, zk)
+	ks, err := newKafkaStream(clientID, zk)
 
 	if err != nil {
 		return nil, err

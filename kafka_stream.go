@@ -113,7 +113,7 @@ func (ks *kafkaStreamImpl) Close() {
 	ks.consumer.Close()
 }
 
-func NewKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
+func newKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
 	brokers, err := findRegisteredBrokers(zk)
 
 	if err != nil {
