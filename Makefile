@@ -29,7 +29,7 @@ generate_proto:
 
 clean:
 	$(GO) clean
-	rm *.pb.go
+	rm -f *.pb.go
 
 test: build
 	$(GO) test
