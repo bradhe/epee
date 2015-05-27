@@ -1,0 +1,216 @@
+package epee
+
+import (
+	"errors"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"log"
+	"path"
+	"reflect"
+	"sync"
+	"time"
+)
+
+var (
+	ErrDecodingMessageFailed = errors.New("message decoding failed")
+)
+
+const (
+	DefaultZookeeperPrefix = "/epee"
+
+	// Number of seconds to wait between flush checks.
+	DefaultMonitorTimeout = 10 * time.Second
+)
+
+func offsetPath(clientID string, topic string, partition int) string {
+	return path.Join(DefaultZookeeperPrefix, clientID, topic, fmt.Sprintf("%d", partition))
+}
+
+func keyPath(clientID string, key string) string {
+	return path.Join(DefaultZookeeperPrefix, clientID, key)
+}
+
+type Stream struct {
+	sync.Mutex
+
+	// Types to be instantiated and passted in to the handlers.
+	types map[string]reflect.Type
+
+	// The zookeeper cluster our service is connecting to.
+	zk ZookeeperClient
+
+	ks KafkaStream
+
+	// The ID of the client. We'll use this for storing data elsewhere.
+	clientID string
+
+	// All the consumers that were created during this stream's lifecycle.
+	consumers map[string]*StreamConsumer
+
+	// All the proxies created during this stream's lifecycle.
+	proxies map[string]*StreamProcessorProxy
+}
+
+func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message) error {
+	obj, ok := reflect.New(t).Interface().(proto.Message)
+
+	if !ok {
+		log.Printf("Failed to deserialize type %v to to message.", t)
+		return ErrDecodingMessageFailed
+	}
+
+	err := proto.Unmarshal(message.Value, obj)
+
+	if err != nil {
+		log.Printf("Failed to unmarshal object: %v", err)
+		return ErrDecodingMessageFailed
+	}
+
+	return proc.Process(message.Offset, obj)
+}
+
+func (q *Stream) runConsumer(topic string, partition int, src <-chan Message, proc StreamProcessor) {
+	for message := range src {
+		t, ok := q.types[message.Topic]
+
+		if !ok {
+			// TODO: Should we actually panic here? Or should we do something else?
+			log.Panicf("Failed to find registerd type for topic %s", message.Topic)
+		}
+
+		q.dispatch(proc, t, &message)
+	}
+}
+
+func (q *Stream) startConsumer(topic string, partition int, proc StreamProcessor) error {
+	// Let's get our consumer's existing offset.
+	var offset int64
+	err := q.zk.Get(offsetPath(q.clientID, topic, partition), &offset)
+
+	// If the error was ErrNotFound then we can rely on offset to be 0.
+	if err != nil && err != ErrNotFound {
+		return err
+	} else if err == ErrNotFound {
+		// Start at the beginning!
+		offset = 0
+	} else {
+		// We'll add 1 to the offset, so we don't re-process a tuple.
+		offset += 1
+	}
+
+	// Now let's see if we can start a consumer from the specified offset.
+	consumer, err := q.ks.Consume(topic, partition, offset)
+
+	if err != nil {
+		return err
+	}
+
+	// Let's see if we already have a proxy here.
+	key := fmt.Sprintf("%s/%d", topic, partition)
+	old, ok := q.consumers[fmt.Sprintf(key)]
+
+	if ok {
+		// there is already a proxy here! Let's kill this one and start over again.
+		q.ks.CancelConsumer(old)
+	}
+
+	// We'll start monitoring this stream processor to figure out when it needs
+	// to be flushed.
+	q.consumers[key] = consumer
+
+	// Everything passed so we can start the consumer up now!
+	go q.runConsumer(topic, partition, consumer.Messages(), proc)
+	return nil
+}
+
+// Registers the type that a topic should deserialize it's content to. It's
+// assumed that the type is a proto.Message. Every new event in the stream on
+// the topic topic will be deserialized with this type.
+func (q *Stream) Register(topic string, obj interface{}) {
+	t := reflect.TypeOf(obj)
+	q.types[topic] = t
+}
+
+func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error {
+	q.Lock()
+	defer q.Unlock()
+
+	proxy := NewStreamProcessorProxy(proc)
+	err := q.startConsumer(topic, partition, proxy)
+
+	if err != nil {
+		log.Printf("ERROR: Failed to start consumer %s for %s:%d. %v", q.clientID, topic, partition, err)
+	} else {
+		// Let's monitor this proxy for any changes, then we'll schedule it for
+		// flushing.
+		key := fmt.Sprintf("%s/%d", topic, partition)
+		q.proxies[key] = proxy
+	}
+
+	return err
+}
+
+func (q *Stream) FlushAll() {
+	for key, proxy := range q.proxies {
+		if proxy.Dirty() {
+			err := proxy.Flush()
+
+			if err != nil {
+				// Flush failed! Who to tell??
+				log.Printf("ERROR: Flushing failed. %v", err)
+			} else {
+				// This is kind of hacky...but it generates the correct path based on
+				// the key in the proxies hash. Le sigh.
+				q.zk.Set(keyPath(q.clientID, key), proxy.LastOffset())
+			}
+		}
+	}
+}
+
+func (q *Stream) runProxyMonitor() {
+	// We run this for forever.
+	for {
+		q.FlushAll()
+
+		// Now let's sleep before we look for more!
+		<-time.After(DefaultMonitorTimeout)
+	}
+}
+
+func (q *Stream) Wait() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	wg.Wait()
+}
+
+func NewStreamFromZookeeper(clientID string, zk ZookeeperClient) (*Stream, error) {
+	ks, err := NewKafkaStream(clientID, zk)
+
+	if err != nil {
+		return nil, err
+	}
+
+	stream := new(Stream)
+	stream.types = make(map[string]reflect.Type)
+	stream.zk = zk
+	stream.ks = ks
+	stream.clientID = clientID
+
+	return stream, nil
+}
+
+func NewStreamFromKafkaStream(clientID string, zk ZookeeperClient, ks KafkaStream) (*Stream, error) {
+	stream := new(Stream)
+	stream.zk = zk
+	stream.ks = ks
+	stream.clientID = clientID
+
+	stream.types = make(map[string]reflect.Type)
+	stream.proxies = make(map[string]*StreamProcessorProxy)
+	stream.consumers = make(map[string]*StreamConsumer)
+
+	// Start monitoring the (currently empty) proxy list for changes.
+	go stream.runProxyMonitor()
+
+	return stream, nil
+}

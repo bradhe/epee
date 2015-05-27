@@ -1,0 +1,5 @@
+package epee;
+
+message TestMessage {
+  required string Name = 1;
+}

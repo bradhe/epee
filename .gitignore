@@ -1,0 +1,5 @@
+# Ignore editor droppings
+*.sw[onp]
+
+# Ignore built components
+/test_types.pb.go
