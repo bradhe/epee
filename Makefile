@@ -23,6 +23,7 @@ setup:
 			sudo make install; \
 	fi
 	go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+	@if [ "$(shell which protoc-gen-go)" == "" ]; then go install github.com/golang/protobuf/protoc-gen-go; fi
 	go get ./...
 
 generate_proto:
