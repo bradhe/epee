@@ -22,6 +22,7 @@ setup:
 			make && \
 			sudo make install; \
 	fi
+	go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
 	go get ./...
 
 generate_proto:
