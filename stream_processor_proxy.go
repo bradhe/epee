@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type StreamProcessorProxy struct {
+type streamProcessorProxy struct {
 	sync.Mutex
 
 	// Indicates if we need to flush this processor or not.
@@ -18,7 +18,7 @@ type StreamProcessorProxy struct {
 	proc StreamProcessor
 }
 
-func (spp *StreamProcessorProxy) Process(offset int64, message proto.Message) error {
+func (spp *streamProcessorProxy) Process(offset int64, message proto.Message) error {
 	spp.Lock()
 	defer spp.Unlock()
 
@@ -32,11 +32,11 @@ func (spp *StreamProcessorProxy) Process(offset int64, message proto.Message) er
 	return err
 }
 
-func (spp *StreamProcessorProxy) LastOffset() int64 {
+func (spp *streamProcessorProxy) LastOffset() int64 {
 	return spp.lastOffset
 }
 
-func (spp *StreamProcessorProxy) Flush() error {
+func (spp *streamProcessorProxy) Flush() error {
 	spp.Lock()
 	defer spp.Unlock()
 
@@ -50,15 +50,15 @@ func (spp *StreamProcessorProxy) Flush() error {
 	return err
 }
 
-func (spp *StreamProcessorProxy) Dirty() bool {
+func (spp *streamProcessorProxy) Dirty() bool {
 	spp.Lock()
 	defer spp.Unlock()
 
 	return spp.dirty
 }
 
-func NewStreamProcessorProxy(proc StreamProcessor) *StreamProcessorProxy {
-	spp := new(StreamProcessorProxy)
+func newStreamProcessorProxy(proc StreamProcessor) *streamProcessorProxy {
+	spp := new(streamProcessorProxy)
 	spp.proc = proc
 	return spp
 }

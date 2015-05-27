@@ -48,7 +48,7 @@ type Stream struct {
 	consumers map[string]*StreamConsumer
 
 	// All the proxies created during this stream's lifecycle.
-	proxies map[string]*StreamProcessorProxy
+	proxies map[string]*streamProcessorProxy
 }
 
 func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message) error {
@@ -135,7 +135,7 @@ func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error
 	q.Lock()
 	defer q.Unlock()
 
-	proxy := NewStreamProcessorProxy(proc)
+	proxy := newStreamProcessorProxy(proc)
 	err := q.startConsumer(topic, partition, proxy)
 
 	if err != nil {
@@ -206,7 +206,7 @@ func NewStreamFromKafkaStream(clientID string, zk ZookeeperClient, ks KafkaStrea
 	stream.clientID = clientID
 
 	stream.types = make(map[string]reflect.Type)
-	stream.proxies = make(map[string]*StreamProcessorProxy)
+	stream.proxies = make(map[string]*streamProcessorProxy)
 	stream.consumers = make(map[string]*StreamConsumer)
 
 	// Start monitoring the (currently empty) proxy list for changes.
