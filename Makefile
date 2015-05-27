@@ -12,7 +12,7 @@ build: clean generate_proto
 	$(GO) build ./...
 
 setup:
-	@if [ "$(shell which protoc)" == "" ]; \
+	@if [ ! -e $(PROTOC) ]; \
 	then \
 		cd $(TMP) && \
 		wget https://protobuf.googlecode.com/files/protobuf-$(PROTOC_VERSION).tar.gz && \
