@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	DefaultZookeeperPrefix = "/epee"
-
 	// Number of seconds to wait between flush checks.
 	DefaultMonitorTimeout = 10 * time.Second
 )

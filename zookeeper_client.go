@@ -12,14 +12,35 @@ import (
 )
 
 var (
+	DefaultZookeeperPrefix = "/epee"
+
 	// This is just blindly passed in to the ZK client.
 	DefaultSessionTimeout = 1 * time.Second
 )
 
+// Wraps common Zookeeper operations behind an interface to make it easier to
+// deal with. Epee also provides a default implementation of ZookeeperClient to
+// make your life even easier.
 type ZookeeperClient interface {
+	// Gets the JSON-encoded value at the path specified with
+	// DefaultZookeeperPrefix prepended to the path.
 	Get(path string, i interface{}) error
+
+	// JSON encodes i and writes that value to the path specified with
+	// DefaultZookeeperPrefix prepended to it.
 	Set(path string, i interface{}) error
+
+	// List all of the child paths under loc. This is considered an absolute path
+	// (e.g. DefaultZookeeperPrefix is not prepended).
 	List(loc string) ([]string, error)
+
+	// Try to acquire a lock by name. If the lock is already acquired by another
+	// client, acquired will be false. If an error occurse, err will be non-nil
+	// and acquired will be false.
+	TryLock(name string) (acquired bool, err error)
+
+	// Close the connection to zookeeper.
+	Close() error
 }
 
 func split(str string) (string, uint64) {
