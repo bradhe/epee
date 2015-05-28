@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Shopify/sarama"
+	"time"
 )
 
 var (
@@ -11,6 +12,39 @@ var (
 	ErrNotFound              = errors.New("not found")
 	ErrStreamClosing         = errors.New("stream closing")
 )
+
+const (
+	RetryForever = 0
+)
+
+// Must open a Zookeeper connection within retry times. If retry <= 0, it will
+// retry for forever.
+func MustGetZookeeperClient(servers []string, retry int) ZookeeperClient {
+	var client ZookeeperClient
+	attempts := 0
+
+	for {
+		var err error
+
+		client, err = NewZookeeperClient(servers)
+
+		// Increment retry if need be.
+		if retry > 0 {
+			attempts += 1
+		}
+
+		if err != nil && attempts > retry {
+			panic(err)
+		} else if err != nil {
+			<-time.After(3 * time.Second)
+		} else {
+			// We found it, we're good!
+			break
+		}
+	}
+
+	return client
+}
 
 func findRegisteredBrokers(zk ZookeeperClient) ([]string, error) {
 	paths, err := zk.List("/brokers/ids")
