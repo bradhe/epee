@@ -150,6 +150,15 @@ func (c *zookeeperClientImpl) List(loc string) ([]string, error) {
 	return fullPaths, nil
 }
 
+func (c *zookeeperClientImpl) TryLock(name string) (acquired bool, err error) {
+	return
+}
+
+func (c *zookeeperClientImpl) Close() error {
+	c.conn.Close()
+	return nil
+}
+
 func NewZookeeperClient(servers []string) (ZookeeperClient, error) {
 	var err error
 

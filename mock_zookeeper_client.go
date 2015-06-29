@@ -8,6 +8,8 @@ import (
 
 type mockZookeeperClient struct {
 	paths map[string][]byte
+
+	locks map[string]bool
 }
 
 func (zk *mockZookeeperClient) List(prefix string) ([]string, error) {
@@ -59,8 +61,27 @@ func (zk *mockZookeeperClient) Set(path string, i interface{}) error {
 	return err
 }
 
+func (zk *mockZookeeperClient) TryLock(name string) (acquired bool, err error) {
+	_, ok := zk.locks[name]
+
+	// If it's already locked, we can't acquire it.
+	if ok {
+		acquired = false
+	} else {
+		acquired = true
+		zk.locks[name] = true
+	}
+
+	return
+}
+
+func (zk *mockZookeeperClient) Close() error {
+	return nil
+}
+
 func newMockZookeeperClient() ZookeeperClient {
 	zk := new(mockZookeeperClient)
 	zk.paths = make(map[string][]byte)
+	zk.locks = make(map[string]bool)
 	return zk
 }
