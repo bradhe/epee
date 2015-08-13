@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/samuel/go-zookeeper/zk"
 	"time"
 )
 
@@ -11,6 +12,7 @@ var (
 	ErrDecodingMessageFailed = errors.New("message decoding failed")
 	ErrNotFound              = errors.New("not found")
 	ErrStreamClosing         = errors.New("stream closing")
+	ErrNoBrokers             = errors.New("no brokers found")
 )
 
 const (
@@ -46,18 +48,20 @@ func MustGetZookeeperClient(servers []string, retry int) ZookeeperClient {
 	return client
 }
 
-func findRegisteredBrokers(zk ZookeeperClient) ([]string, error) {
-	paths, err := zk.List("/brokers/ids")
+func findRegisteredBrokers(client ZookeeperClient) ([]string, error) {
+	paths, err := client.List("/brokers/ids")
 
-	if err != nil {
+	if err == zk.ErrNoNode {
+		return []string{}, ErrNoBrokers
+	} else if err != nil {
 		return []string{}, err
 	}
 
 	fullPaths := make([]string, 0)
 
 	for _, p := range paths {
-		data := make(map[string]interface{})
-		err := zk.Get(p, data)
+		data := make(map[string]interface{}, 0)
+		err := client.Get(p, &data)
 
 		if err != nil {
 			return []string{}, err

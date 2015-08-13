@@ -44,11 +44,19 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 		return nil, ErrStreamClosing
 	}
 
+	// Before we get started let's see if the topic actually exists.
+	err := ks.client.RefreshMetadata(topic)
+
+	// If we can't get metadata for a given topic we'll need to report that to
+	// someone.
+	if err != nil {
+		return nil, err
+	}
+
 	if offset == 0 {
 		offset = sarama.OffsetOldest
 	}
 
-	var err error
 	var partitionConsumer sarama.PartitionConsumer
 
 	for {
@@ -123,7 +131,7 @@ func newKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
 	client, err := sarama.NewClient(brokers, getConfig(clientID))
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to instantiate new client. %v", err)
 	}
 
 	// Now that we have a client, let's start a consumer up.
@@ -131,7 +139,7 @@ func newKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
 
 	if err != nil {
 		client.Close()
-		return nil, err
+		return nil, fmt.Errorf("Failed to open new consumer from client. %v", err)
 	}
 
 	stream := new(kafkaStreamImpl)

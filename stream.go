@@ -49,7 +49,7 @@ func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message
 	obj, ok := reflect.New(t).Interface().(proto.Message)
 
 	if !ok {
-		log.Printf("Failed to deserialize type %v to to message.", t)
+		log.Printf("Failed to cast type %v to to message.", t)
 		return ErrDecodingMessageFailed
 	}
 
@@ -191,6 +191,29 @@ func NewStream(clientID string, zk ZookeeperClient) (*Stream, error) {
 	stream.clientID = clientID
 
 	return stream, nil
+}
+
+func MustGetStream(clientID string, zk ZookeeperClient) *Stream {
+	var ks kafkaStream
+
+	for {
+		var err error
+
+		ks, err = newKafkaStream(clientID, zk)
+
+		// If this is a restartable error, let's get this shit rollin'.
+		if err == ErrNoBrokers {
+			<-time.After(3 * time.Second)
+		} else if err != nil {
+			panic(err)
+		} else {
+			break
+		}
+	}
+
+	// NOTE: We can safely ignore this because we're bad asses.
+	stream, _ := newStreamWithKafkaStream(clientID, zk, ks)
+	return stream
 }
 
 func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks kafkaStream) (*Stream, error) {

@@ -4,6 +4,7 @@ import (
 	"github.com/Shopify/sarama"
 	"log"
 	"sync"
+	"time"
 )
 
 type streamConsumer struct {

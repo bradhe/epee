@@ -106,11 +106,13 @@ func (c *zookeeperClientImpl) Get(loc string, i interface{}) error {
 		return err
 	}
 
-	// We need to deserialize this value.
-	err = json.Unmarshal(bytes, i)
+	if len(bytes) > 0 {
+		// We need to deserialize this value.
+		err = json.Unmarshal(bytes, i)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
