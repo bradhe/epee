@@ -12,7 +12,7 @@ import (
 
 const (
 	// Number of seconds to wait between flush checks.
-	DefaultMonitorTimeout = 10 * time.Second
+	DefaultMonitorTimeout = 5 * time.Second
 )
 
 func offsetPath(clientID string, topic string, partition int) string {
@@ -63,7 +63,7 @@ func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message
 	return proc.Process(message.Offset, obj)
 }
 
-func (q *Stream) runConsumer(topic string, partition int, src <-chan Message, proc StreamProcessor) {
+func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, proc StreamProcessor) {
 	for message := range src {
 		t, ok := q.types[message.Topic]
 
@@ -72,7 +72,7 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan Message, pr
 			log.Panicf("Failed to find registerd type for topic %s", message.Topic)
 		}
 
-		q.dispatch(proc, t, &message)
+		q.dispatch(proc, t, message)
 	}
 }
 
@@ -155,6 +155,7 @@ func (q *Stream) flushAll() {
 			} else {
 				// This is kind of hacky...but it generates the correct path based on
 				// the key in the proxies hash. Le sigh.
+				log.Printf("INFO: Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
 				q.zk.Set(keyPath(q.clientID, key), proxy.LastOffset())
 			}
 		}

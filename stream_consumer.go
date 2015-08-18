@@ -4,7 +4,6 @@ import (
 	"github.com/Shopify/sarama"
 	"log"
 	"sync"
-	"time"
 )
 
 type streamConsumer struct {
@@ -18,7 +17,7 @@ type streamConsumer struct {
 	partitionConsumer sarama.PartitionConsumer
 
 	// The channel to deliver messages to
-	dst chan Message
+	dst chan *Message
 }
 
 func (sc *streamConsumer) run() {
@@ -41,7 +40,7 @@ func (sc *streamConsumer) run() {
 		case message := <-messages:
 			// We'll instantiate one of our own messages and keep it 'round incase we
 			// want to keep goin'.
-			sc.dst <- Message{
+			sc.dst <- &Message{
 				Offset: message.Offset,
 				Value:  message.Value,
 				Topic:  message.Topic,
@@ -57,7 +56,7 @@ func (sc *streamConsumer) run() {
 	}
 }
 
-func (sc *streamConsumer) Messages() <-chan Message {
+func (sc *streamConsumer) Messages() <-chan *Message {
 	return sc.dst
 }
 
@@ -74,7 +73,7 @@ func (sc *streamConsumer) Close() {
 	sc.wg.Wait()
 }
 
-func newStreamConsumer(ch chan Message, partitionConsumer sarama.PartitionConsumer) *streamConsumer {
+func newStreamConsumer(ch chan *Message, partitionConsumer sarama.PartitionConsumer) *streamConsumer {
 	sc := new(streamConsumer)
 	sc.dst = ch
 	sc.partitionConsumer = partitionConsumer

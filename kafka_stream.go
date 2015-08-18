@@ -1,6 +1,7 @@
 package epee
 
 import (
+	"fmt"
 	"github.com/Shopify/sarama"
 	"log"
 	"sync"
@@ -76,7 +77,7 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 		}
 	}
 
-	ch := make(chan Message, 0)
+	ch := make(chan *Message, 0)
 	consumer := newStreamConsumer(ch, partitionConsumer)
 
 	// We have to acquire the lock to modify the map.
