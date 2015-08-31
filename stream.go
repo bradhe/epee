@@ -72,7 +72,11 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, p
 			log.Panicf("Failed to find registerd type for topic %s", message.Topic)
 		}
 
-		q.dispatch(proc, t, message)
+		err := q.dispatch(proc, t, message)
+
+		if err != nil {
+			log.Printf("ERROR: Failed to process message. %v")
+		}
 	}
 }
 
