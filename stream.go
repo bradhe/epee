@@ -75,7 +75,7 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, p
 		err := q.dispatch(proc, t, message)
 
 		if err != nil {
-			log.Printf("ERROR: Failed to process message. %v")
+			log.Printf("ERROR: Failed to process message. %v", err)
 		}
 	}
 }
