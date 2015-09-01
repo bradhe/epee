@@ -15,7 +15,7 @@ var (
 	DefaultZookeeperPrefix = "/epee"
 
 	// This is just blindly passed in to the ZK client.
-	DefaultSessionTimeout = 1 * time.Second
+	DefaultSessionTimeout = 5 * time.Second
 )
 
 // Wraps common Zookeeper operations behind an interface to make it easier to
