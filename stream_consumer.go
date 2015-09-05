@@ -47,10 +47,10 @@ func (sc *streamConsumer) run() {
 			}
 		case err := <-errors:
 			if err.Err == sarama.ErrClosedClient {
-				log.Printf("ERROR: Kafka connection is closed. Stopping consumer.", err.Err)
+				logError("Kafka connection is closed. Stopping consumer. %v", err.Err)
 				break
 			} else {
-				log.Printf("ERROR: Issue pulling from Kafka. %v\n", err.Err)
+				logError("Failed to get errors from Sarama. %v", err.Err)
 			}
 		}
 	}
@@ -62,7 +62,7 @@ func (sc *streamConsumer) Messages() <-chan *Message {
 
 func (sc *streamConsumer) Start() {
 	sc.wg.Add(1)
-	go sc.run()
+	sc.run()
 }
 
 func (sc *streamConsumer) Close() {

@@ -65,7 +65,7 @@ func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message
 
 func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, proc StreamProcessor) {
 	for message := range src {
-		t, ok := q.types[message.Topic]
+		t, ok := GetType(message.Topic)
 
 		if !ok {
 			// TODO: Should we actually panic here? Or should we do something else?
@@ -121,14 +121,6 @@ func (q *Stream) startConsumer(topic string, partition int, proc StreamProcessor
 	return nil
 }
 
-// Registers the type that a topic should deserialize it's content to. It's
-// assumed that the type is a proto.Message. Every new event in the stream on
-// the topic topic will be deserialized with this type.
-func (q *Stream) Register(topic string, obj interface{}) {
-	t := reflect.TypeOf(obj)
-	q.types[topic] = t
-}
-
 func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error {
 	q.Lock()
 	defer q.Unlock()
@@ -137,7 +129,7 @@ func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error
 	err := q.startConsumer(topic, partition, proxy)
 
 	if err != nil {
-		log.Printf("ERROR: Failed to start consumer %s for %s:%d. %v", q.clientID, topic, partition, err)
+		logError("Failed to start consumer %s for [%s:%d]. %v", q.clientID, topic, partition, err)
 	} else {
 		// Let's monitor this proxy for any changes, then we'll schedule it for
 		// flushing.

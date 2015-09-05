@@ -83,3 +83,15 @@ func getConfig(clientID string) *sarama.Config {
 
 	return config
 }
+
+func logError(format string, args ...interface{}) {
+	Logger.Printf("[epee] ERROR: %s", fmt.Sprintf(format, args...))
+}
+
+func logPanic(format string, args ...interface{}) {
+	Logger.Printf("[epee] PANIC: %s", fmt.Sprintf(format, args...))
+}
+
+func logInfo(format string, args ...interface{}) {
+	Logger.Printf("[epee] INFO: %s", fmt.Sprintf(format, args...))
+}
