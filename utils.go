@@ -81,5 +81,12 @@ func getConfig(clientID string) *sarama.Config {
 		return sarama.NewHashPartitioner(topic)
 	}
 
+	config.Producer.MaxMessageBytes = MaxMessageSize
+	config.Consumer.Fetch.Max = int32(MaxMessageSize)
+
+	// We bump the default ever-so-slightly just incase. This could be optimized
+	// to do something better statistically.
+	config.Consumer.Fetch.Default = int32(MaxMessageSize / 4)
+
 	return config
 }

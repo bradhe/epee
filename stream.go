@@ -15,6 +15,11 @@ const (
 	DefaultMonitorTimeout = 5 * time.Second
 )
 
+var (
+	// Max size of the messages producers and consumers try to fetch.
+	MaxMessageSize = 11000000
+)
+
 func offsetPath(clientID string, topic string, partition int) string {
 	return path.Join(DefaultZookeeperPrefix, clientID, topic, fmt.Sprintf("%d", partition))
 }
