@@ -2,6 +2,7 @@ package epee
 
 import (
 	"fmt"
+	"github.com/bradhe/nbonce"
 	"github.com/golang/protobuf/proto"
 	"log"
 	"path"
@@ -48,6 +49,9 @@ type Stream struct {
 
 	// All the proxies created during this stream's lifecycle.
 	proxies map[string]*streamProcessorProxy
+
+	// Used to start flushes.
+	trigger nbonce.NonblockingOnce
 }
 
 func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message) error {
@@ -82,6 +86,12 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, p
 		if err != nil {
 			log.Printf("ERROR: Failed to process message on topic [%s, %d]. %v", topic, partition, err)
 		}
+
+		// Now that we have a stream, we want to wait some time and start a flush.
+		q.trigger.Do(func() {
+			time.Sleep(DefaultMonitorTimeout)
+			q.flushAll()
+		})
 	}
 }
 
@@ -171,16 +181,6 @@ func (q *Stream) flushAll() {
 	}
 }
 
-func (q *Stream) runProxyMonitor() {
-	// We run this for forever.
-	for {
-		q.flushAll()
-
-		// Now let's sleep before we look for more!
-		<-time.After(DefaultMonitorTimeout)
-	}
-}
-
 func (q *Stream) Wait() {
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -236,8 +236,9 @@ func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks kafkaStrea
 	stream.proxies = make(map[string]*streamProcessorProxy)
 	stream.consumers = make(map[string]*streamConsumer)
 
-	// Start monitoring the (currently empty) proxy list for changes.
-	go stream.runProxyMonitor()
+	// We want to be able to reschedule this goroutine if it hasn't already been
+	// scheduled.
+	stream.trigger.Resettable = true
 
 	return stream, nil
 }

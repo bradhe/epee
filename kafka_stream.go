@@ -45,20 +45,12 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 		return nil, ErrStreamClosing
 	}
 
-	// Before we get started let's see if the topic actually exists.
-	err := ks.client.RefreshMetadata(topic)
-
-	// If we can't get metadata for a given topic we'll need to report that to
-	// someone.
-	if err != nil {
-		return nil, err
-	}
-
 	if offset == 0 {
 		offset = sarama.OffsetOldest
 	}
 
 	var partitionConsumer sarama.PartitionConsumer
+	var err error
 
 	for {
 		if partitionConsumer != nil {
