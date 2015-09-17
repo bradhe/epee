@@ -3,7 +3,6 @@ package epee
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
-	"log"
 	"sync"
 	"time"
 )
@@ -60,11 +59,11 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 		partitionConsumer, err = ks.consumer.ConsumePartition(topic, int32(partition), offset)
 
 		if err == sarama.ErrUnknownTopicOrPartition {
-			log.Printf("WARNING: Failed to find [%s, partition %d]. Waiting, then retrying.", topic, partition)
+			logWarning("Failed to find [%s, partition %d]. Waiting, then retrying.", topic, partition)
 			<-time.After(5 * time.Second)
 			continue
 		} else if err != nil {
-			log.Printf("ERROR: Failed to start partition consumer. %v", err)
+			logError("Failed to start partition consumer. %v", err)
 			return nil, err
 		}
 	}

@@ -3,7 +3,6 @@ package epee
 import (
 	"encoding/json"
 	"github.com/samuel/go-zookeeper/zk"
-	"log"
 	"math"
 	"path"
 	"strconv"
@@ -55,7 +54,7 @@ func split(str string) (string, uint64) {
 	seq, err := strconv.ParseInt(str[i+1:], 10, 64)
 
 	if err != nil {
-		log.Printf("WARNING: Failed to parse sequence in %v (%s)", str, str[i:])
+		logWarning("Failed to parse sequence in %v (%s)", str, str[i:])
 	} else {
 		res = uint64(seq)
 	}

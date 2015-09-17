@@ -3,7 +3,6 @@ package epee
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"log"
 	"path"
 	"reflect"
 	"sync"
@@ -54,14 +53,14 @@ func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message
 	obj, ok := reflect.New(t).Interface().(proto.Message)
 
 	if !ok {
-		log.Printf("Failed to cast type %v to to message.", t)
+		logError("Failed to cast type %v to to message.", t)
 		return ErrDecodingMessageFailed
 	}
 
 	err := proto.Unmarshal(message.Value, obj)
 
 	if err != nil {
-		log.Printf("Failed to unmarshal object: %v", err)
+		logError("Failed to unmarshal object: %v", err)
 		return ErrDecodingMessageFailed
 	}
 
@@ -74,13 +73,13 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, p
 
 		if !ok {
 			// TODO: Should we actually panic here? Or should we do something else?
-			log.Panicf("Failed to find registerd type for topic %s", message.Topic)
+			logPanic("Failed to find registerd type for topic %s", message.Topic)
 		}
 
 		err := q.dispatch(proc, t, message)
 
 		if err != nil {
-			log.Printf("ERROR: Failed to process message on topic [%s, %d]. %v", topic, partition, err)
+			logError("Failed to process message on topic [%s, %d]. %v", topic, partition, err)
 		}
 	}
 }
@@ -149,7 +148,7 @@ func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error
 	err := q.startConsumer(topic, partition, proxy)
 
 	if err != nil {
-		log.Printf("ERROR: Failed to start consumer %s for %s:%d. %v", q.clientID, topic, partition, err)
+		logError("ERROR: Failed to start consumer %s for %s:%d. %v", q.clientID, topic, partition, err)
 	} else {
 		// Let's monitor this proxy for any changes, then we'll schedule it for
 		// flushing.
@@ -161,20 +160,27 @@ func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error
 }
 
 func (q *Stream) flushAll() {
+	flushable := 0
+
 	for key, proxy := range q.proxies {
 		if proxy.Dirty() {
+			flushable += 1
 			err := proxy.Flush()
 
 			if err != nil {
 				// Flush failed! Who to tell??
-				log.Printf("ERROR: Flushing failed. %v", err)
+				logError("Flushing failed. %v", err)
 			} else {
 				// This is kind of hacky...but it generates the correct path based on
 				// the key in the proxies hash. Le sigh.
-				log.Printf("INFO: Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
+				logInfo("INFO: Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
 				q.zk.Set(keyPath(q.clientID, key), proxy.LastOffset())
 			}
 		}
+	}
+
+	if flushable < 1 {
+		logWarning("No proxies of %d were flushable on this cycle.", len(q.proxies))
 	}
 }
 
