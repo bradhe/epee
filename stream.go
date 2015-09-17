@@ -165,6 +165,7 @@ func (q *Stream) flushAll() {
 	for key, proxy := range q.proxies {
 		if proxy.Dirty() {
 			flushable += 1
+			logInfo("Starting flush of %s", key)
 			err := proxy.Flush()
 
 			if err != nil {
@@ -173,7 +174,7 @@ func (q *Stream) flushAll() {
 			} else {
 				// This is kind of hacky...but it generates the correct path based on
 				// the key in the proxies hash. Le sigh.
-				logInfo("INFO: Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
+				logInfo("Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
 				q.zk.Set(keyPath(q.clientID, key), proxy.LastOffset())
 			}
 		}
