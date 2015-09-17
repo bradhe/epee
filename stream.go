@@ -2,7 +2,6 @@ package epee
 
 import (
 	"fmt"
-	"github.com/bradhe/nbonce"
 	"github.com/golang/protobuf/proto"
 	"log"
 	"path"
@@ -13,7 +12,7 @@ import (
 
 const (
 	// Number of seconds to wait between flush checks.
-	DefaultMonitorTimeout = 5 * time.Second
+	DefaultMonitorTimeout = 15 * time.Second
 )
 
 var (
@@ -49,9 +48,6 @@ type Stream struct {
 
 	// All the proxies created during this stream's lifecycle.
 	proxies map[string]*streamProcessorProxy
-
-	// Used to start flushes.
-	trigger nbonce.NonblockingOnce
 }
 
 func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message) error {
@@ -86,12 +82,13 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, p
 		if err != nil {
 			log.Printf("ERROR: Failed to process message on topic [%s, %d]. %v", topic, partition, err)
 		}
+	}
+}
 
-		// Now that we have a stream, we want to wait some time and start a flush.
-		q.trigger.Do(func() {
-			time.Sleep(DefaultMonitorTimeout)
-			q.flushAll()
-		})
+func (q *Stream) runConsumerMonitor() {
+	for {
+		time.Sleep(DefaultMonitorTimeout)
+		q.flushAll()
 	}
 }
 
@@ -235,10 +232,7 @@ func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks kafkaStrea
 	stream.types = make(map[string]reflect.Type)
 	stream.proxies = make(map[string]*streamProcessorProxy)
 	stream.consumers = make(map[string]*streamConsumer)
-
-	// We want to be able to reschedule this goroutine if it hasn't already been
-	// scheduled.
-	stream.trigger.Resettable = true
+	go stream.runConsumerMonitor()
 
 	return stream, nil
 }
