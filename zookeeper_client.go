@@ -2,6 +2,7 @@ package epee
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/samuel/go-zookeeper/zk"
 	"math"
 	"path"
@@ -15,6 +16,10 @@ var (
 
 	// This is just blindly passed in to the ZK client.
 	DefaultSessionTimeout = 5 * time.Second
+)
+
+var (
+	ErrZookeeperNodeExists = errors.New("node exists")
 )
 
 // Wraps common Zookeeper operations behind an interface to make it easier to
@@ -115,6 +120,17 @@ func (c *zookeeperClientImpl) Get(loc string, i interface{}) error {
 	}
 
 	return nil
+}
+
+func (c *zookeeperClientImpl) Create(loc string, obj interface{}) (err error) {
+	_, err = c.conn.Create(loc, b, 0, zk.WorldACL(zk.PermAll))
+
+	// Translate this in to a friendlier message for our users.
+	if err == zk.ErrNodeExists {
+		return ErrZookeeperNodeExists
+	}
+
+	return err
 }
 
 func (c *zookeeperClientImpl) Set(loc string, obj interface{}) (err error) {

@@ -120,6 +120,8 @@ func newKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
 		return nil, err
 	}
 
+	logInfo("Using brokers %v", brokers)
+
 	client, err := sarama.NewClient(brokers, getConfig(clientID))
 
 	if err != nil {
