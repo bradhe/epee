@@ -123,14 +123,22 @@ func (c *zookeeperClientImpl) Get(loc string, i interface{}) error {
 }
 
 func (c *zookeeperClientImpl) Create(loc string, obj interface{}) (err error) {
+	var b []byte
+	b, err = json.Marshal(obj)
+
+	if err != nil {
+		return
+	}
+
+	c.mkdirs(path.Dir(loc))
 	_, err = c.conn.Create(loc, b, 0, zk.WorldACL(zk.PermAll))
 
 	// Translate this in to a friendlier message for our users.
 	if err == zk.ErrNodeExists {
-		return ErrZookeeperNodeExists
+		err = ErrZookeeperNodeExists
 	}
 
-	return err
+	return
 }
 
 func (c *zookeeperClientImpl) Set(loc string, obj interface{}) (err error) {
