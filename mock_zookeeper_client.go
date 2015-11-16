@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"path"
+	"sync"
 )
 
 type mockZookeeperClient struct {
+	sync.Mutex
+
 	paths map[string][]byte
 
 	locks map[string]bool
@@ -50,7 +53,29 @@ func (zk *mockZookeeperClient) Get(path string, i interface{}) error {
 	return nil
 }
 
+func (zk *mockZookeeperClient) Create(path string, i interface{}) error {
+	zk.Lock()
+	defer zk.Unlock()
+
+	_, ok := zk.paths[path]
+
+	if ok {
+		return ErrZookeeperNodeExists
+	}
+
+	log.Printf("ZK: Setting %s to %v", path, i)
+	bytes, err := json.Marshal(i)
+
+	if err == nil {
+		zk.paths[path] = bytes
+	}
+	return nil
+}
+
 func (zk *mockZookeeperClient) Set(path string, i interface{}) error {
+	zk.Lock()
+	defer zk.Unlock()
+
 	log.Printf("ZK: Setting %s to %v", path, i)
 	bytes, err := json.Marshal(i)
 
