@@ -30,8 +30,11 @@ type ZookeeperClient interface {
 	// DefaultZookeeperPrefix prepended to the path.
 	Get(path string, i interface{}) error
 
-	// JSON encodes i and writes that value to the path specified with
-	// DefaultZookeeperPrefix prepended to it.
+	// JSON encodes i and creates a new value at that path. If the value already
+	// exists ErrZookeeperNodeExists is returned.
+	Create(path string, i interface{}) error
+
+	// JSON encodes i and writes that value to the path specified.
 	Set(path string, i interface{}) error
 
 	// List all of the child paths under loc. This is considered an absolute path
