@@ -8,7 +8,7 @@ PROTOC						:= /usr/local/bin/protoc
 PROTOC_VERSION 		:= 2.5.0
 PROTOC_PREFIX			:= /usr
 
-build: clean generate_proto
+build: clean generate
 	$(GO) build ./...
 
 setup:
@@ -22,16 +22,15 @@ setup:
 			make && \
 			sudo make install; \
 	fi
-	go get github.com/golang/protobuf/{proto,protoc-gen-go}
-	@if [ "$(shell which protoc-gen-go)" == "" ]; then go install github.com/golang/protobuf/protoc-gen-go; fi
+	go get -d github.com/golang/protobuf/{proto,protoc-gen-go}
 	go get ./...
 
-generate_proto:
-	$(PROTOC) --go_out=. ./test_types.proto
+generate:
+	$(GO) generate ./...
 
 clean:
 	$(GO) clean
-	rm -f *.pb.go
+	-rm *.pb.go
 
 test: build
 	$(GO) test

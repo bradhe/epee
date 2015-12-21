@@ -1,3 +1,4 @@
+//go:generate protoc --go_out=plugins=go-rpcgen:. test_types.proto
 package epee
 
 import (
