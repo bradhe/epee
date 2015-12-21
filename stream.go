@@ -69,7 +69,7 @@ func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message
 
 func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, proc StreamProcessor) {
 	for message := range src {
-		t, ok := GetType(message.Topic)
+		t, ok := GetStreamType(message.Topic)
 
 		if !ok {
 			// TODO: Should we actually panic here? Or should we do something else?

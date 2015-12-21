@@ -2,7 +2,6 @@ package epee
 
 import (
 	"github.com/Shopify/sarama"
-	"log"
 	"sync"
 )
 

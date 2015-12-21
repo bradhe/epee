@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/samuel/go-zookeeper/zk"
-	"io/ioutil"
-	"log"
 	"time"
 )
 
@@ -15,19 +13,11 @@ var (
 	ErrNotFound              = errors.New("not found")
 	ErrStreamClosing         = errors.New("stream closing")
 	ErrNoBrokers             = errors.New("no brokers found")
-
-	// Logger that can be used whenever we want to log stuff. Gets discarded by
-	// default.
-	Logger *log.Logger
 )
 
 const (
 	RetryForever = 0
 )
-
-func init() {
-	Logger = log.New(ioutil.Discard, "", 0)
-}
 
 func logMessage(level, format string, args ...interface{}) {
 	if Logger == nil {
@@ -129,16 +119,4 @@ func getConfig(clientID string) *sarama.Config {
 	config.Consumer.Fetch.Default = int32(MaxMessageSize / 4)
 
 	return config
-}
-
-func logError(format string, args ...interface{}) {
-	Logger.Printf("[epee] ERROR: %s", fmt.Sprintf(format, args...))
-}
-
-func logPanic(format string, args ...interface{}) {
-	Logger.Printf("[epee] PANIC: %s", fmt.Sprintf(format, args...))
-}
-
-func logInfo(format string, args ...interface{}) {
-	Logger.Printf("[epee] INFO: %s", fmt.Sprintf(format, args...))
 }

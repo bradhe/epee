@@ -4,7 +4,7 @@ TMP								:= /tmp
 GO 								:= /usr/local/go/bin/go
 VERSION          	:= $(shell grep Version version.go | sed -e 's/\"//g' -e 's/const Version = //')
 
-PROTOC						:= /usr/bin/protoc
+PROTOC						:= /usr/local/bin/protoc
 PROTOC_VERSION 		:= 2.5.0
 PROTOC_PREFIX			:= /usr
 

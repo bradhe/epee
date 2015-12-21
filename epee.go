@@ -62,10 +62,13 @@ func RegisterType(topic string, t reflect.Type) {
 	streamTypes[topic] = t
 }
 
-func GetStreamType(topic string) reflect.Type {
+func GetStreamType(topic string) (reflect.Type, bool) {
 	tmut.RLock()
 	defer tmut.RUnlock()
-	return streamTypes[topic]
+
+	// go can be real silly sometimes.
+	t, ok := streamTypes[topic]
+	return t, ok
 }
 
 func doStart(c *cli.Context) {
