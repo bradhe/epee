@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/samuel/go-zookeeper/zk"
+	"io/ioutil"
+	"log"
 	"time"
 )
 
@@ -13,11 +15,49 @@ var (
 	ErrNotFound              = errors.New("not found")
 	ErrStreamClosing         = errors.New("stream closing")
 	ErrNoBrokers             = errors.New("no brokers found")
+
+	// Logger that can be used whenever we want to log stuff. Gets discarded by
+	// default.
+	Logger *log.Logger
 )
 
 const (
 	RetryForever = 0
 )
+
+func init() {
+	Logger = log.New(ioutil.Discard, "", 0)
+}
+
+func logMessage(level, format string, args ...interface{}) {
+	if Logger == nil {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Logger.Printf("[epee] %s: %s", level, msg)
+}
+
+func logInfo(format string, args ...interface{}) {
+	logMessage("INFO", format, args...)
+}
+
+func logError(format string, args ...interface{}) {
+	logMessage("ERROR", format, args...)
+}
+
+func logWarning(format string, args ...interface{}) {
+	logMessage("WARN", format, args...)
+}
+
+func logPanic(format string, args ...interface{}) {
+	if Logger == nil {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Logger.Panicf("[epee] PANIC: %s", msg)
+}
 
 // Must open a Zookeeper connection within retry times. If retry <= 0, it will
 // retry for forever.
@@ -80,6 +120,13 @@ func getConfig(clientID string) *sarama.Config {
 	config.Producer.Partitioner = func(topic string) sarama.Partitioner {
 		return sarama.NewHashPartitioner(topic)
 	}
+
+	config.Producer.MaxMessageBytes = MaxMessageSize
+	config.Consumer.Fetch.Max = int32(MaxMessageSize)
+
+	// We bump the default ever-so-slightly just incase. This could be optimized
+	// to do something better statistically.
+	config.Consumer.Fetch.Default = int32(MaxMessageSize / 4)
 
 	return config
 }

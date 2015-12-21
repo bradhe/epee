@@ -13,7 +13,7 @@ import (
 type StreamProducer struct {
 	client sarama.Client
 
-	producer sarama.AsyncProducer
+	producer sarama.SyncProducer
 }
 
 // Serializes a protocol buffer message to a byte string and publishes it to
@@ -27,16 +27,8 @@ func (sp *StreamProducer) Publish(topic, key string, message proto.Message) erro
 		Value: newProtobufMessageEncoder(message),
 	}
 
-	sp.producer.Input() <- &m
-
-	select {
-	case err := <-sp.producer.Errors():
-		return err.Err
-	default:
-		// Don't do anything.
-	}
-
-	return nil
+	_, _, err := sp.producer.SendMessage(&m)
+	return err
 }
 
 // Creates a new StreamProducer. Looks up the brokers' addresses in Zookeeper
@@ -55,7 +47,7 @@ func NewStreamProducer(clientID string, zk ZookeeperClient) (*StreamProducer, er
 		return nil, err
 	}
 
-	producer, err := sarama.NewAsyncProducerFromClient(client)
+	producer, err := sarama.NewSyncProducerFromClient(client)
 
 	if err != nil {
 		client.Close()

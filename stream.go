@@ -3,7 +3,6 @@ package epee
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"log"
 	"path"
 	"reflect"
 	"sync"
@@ -12,7 +11,12 @@ import (
 
 const (
 	// Number of seconds to wait between flush checks.
-	DefaultMonitorTimeout = 5 * time.Second
+	DefaultMonitorTimeout = 15 * time.Second
+)
+
+var (
+	// Max size of the messages producers and consumers try to fetch.
+	MaxMessageSize = 11000000
 )
 
 func offsetPath(clientID string, topic string, partition int) string {
@@ -49,14 +53,14 @@ func (q *Stream) dispatch(proc StreamProcessor, t reflect.Type, message *Message
 	obj, ok := reflect.New(t).Interface().(proto.Message)
 
 	if !ok {
-		log.Printf("Failed to cast type %v to to message.", t)
+		logError("Failed to cast type %v to to message.", t)
 		return ErrDecodingMessageFailed
 	}
 
 	err := proto.Unmarshal(message.Value, obj)
 
 	if err != nil {
-		log.Printf("Failed to unmarshal object: %v", err)
+		logError("Failed to unmarshal object: %v", err)
 		return ErrDecodingMessageFailed
 	}
 
@@ -69,14 +73,21 @@ func (q *Stream) runConsumer(topic string, partition int, src <-chan *Message, p
 
 		if !ok {
 			// TODO: Should we actually panic here? Or should we do something else?
-			log.Panicf("Failed to find registerd type for topic %s", message.Topic)
+			logPanic("Failed to find registerd type for topic %s", message.Topic)
 		}
 
 		err := q.dispatch(proc, t, message)
 
 		if err != nil {
-			log.Printf("ERROR: Failed to process message on topic [%s, %d]. %v", topic, partition, err)
+			logError("Failed to process message on topic [%s, %d]. %v", topic, partition, err)
 		}
+	}
+}
+
+func (q *Stream) runConsumerMonitor() {
+	for {
+		time.Sleep(DefaultMonitorTimeout)
+		q.flushAll()
 	}
 }
 
@@ -141,30 +152,28 @@ func (q *Stream) Stream(topic string, partition int, proc StreamProcessor) error
 }
 
 func (q *Stream) flushAll() {
+	flushable := 0
+
 	for key, proxy := range q.proxies {
 		if proxy.Dirty() {
+			flushable += 1
+			logInfo("Starting flush of %s", key)
 			err := proxy.Flush()
 
 			if err != nil {
 				// Flush failed! Who to tell??
-				log.Printf("ERROR: Flushing failed. %v", err)
+				logError("Flushing failed. %v", err)
 			} else {
 				// This is kind of hacky...but it generates the correct path based on
 				// the key in the proxies hash. Le sigh.
-				log.Printf("INFO: Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
+				logInfo("Flushing successful. Setting %s to %d", keyPath(q.clientID, key), proxy.LastOffset())
 				q.zk.Set(keyPath(q.clientID, key), proxy.LastOffset())
 			}
 		}
 	}
-}
 
-func (q *Stream) runProxyMonitor() {
-	// We run this for forever.
-	for {
-		q.flushAll()
-
-		// Now let's sleep before we look for more!
-		<-time.After(DefaultMonitorTimeout)
+	if flushable < 1 {
+		logWarning("No proxies of %d were flushable on this cycle.", len(q.proxies))
 	}
 }
 
@@ -222,9 +231,7 @@ func newStreamWithKafkaStream(clientID string, zk ZookeeperClient, ks kafkaStrea
 	stream.types = make(map[string]reflect.Type)
 	stream.proxies = make(map[string]*streamProcessorProxy)
 	stream.consumers = make(map[string]*streamConsumer)
-
-	// Start monitoring the (currently empty) proxy list for changes.
-	go stream.runProxyMonitor()
+	go stream.runConsumerMonitor()
 
 	return stream, nil
 }

@@ -3,7 +3,6 @@ package epee
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
-	"log"
 	"sync"
 	"time"
 )
@@ -45,20 +44,12 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 		return nil, ErrStreamClosing
 	}
 
-	// Before we get started let's see if the topic actually exists.
-	err := ks.client.RefreshMetadata(topic)
-
-	// If we can't get metadata for a given topic we'll need to report that to
-	// someone.
-	if err != nil {
-		return nil, err
-	}
-
 	if offset == 0 {
 		offset = sarama.OffsetOldest
 	}
 
 	var partitionConsumer sarama.PartitionConsumer
+	var err error
 
 	for {
 		if partitionConsumer != nil {
@@ -68,11 +59,11 @@ func (ks *kafkaStreamImpl) Consume(topic string, partition int, offset int64) (*
 		partitionConsumer, err = ks.consumer.ConsumePartition(topic, int32(partition), offset)
 
 		if err == sarama.ErrUnknownTopicOrPartition {
-			log.Printf("WARNING: Failed to find [%s, partition %d]. Waiting, then retrying.", topic, partition)
+			logWarning("Failed to find [%s, partition %d]. Waiting, then retrying.", topic, partition)
 			<-time.After(5 * time.Second)
 			continue
 		} else if err != nil {
-			log.Printf("ERROR: Failed to start partition consumer. %v", err)
+			logError("Failed to start partition consumer. %v", err)
 			return nil, err
 		}
 	}
@@ -128,6 +119,8 @@ func newKafkaStream(clientID string, zk ZookeeperClient) (kafkaStream, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	logInfo("Using brokers %v", brokers)
 
 	client, err := sarama.NewClient(brokers, getConfig(clientID))
 

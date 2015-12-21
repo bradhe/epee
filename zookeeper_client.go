@@ -2,8 +2,8 @@ package epee
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/samuel/go-zookeeper/zk"
-	"log"
 	"math"
 	"path"
 	"strconv"
@@ -18,6 +18,10 @@ var (
 	DefaultSessionTimeout = 5 * time.Second
 )
 
+var (
+	ErrZookeeperNodeExists = errors.New("node exists")
+)
+
 // Wraps common Zookeeper operations behind an interface to make it easier to
 // deal with. Epee also provides a default implementation of ZookeeperClient to
 // make your life even easier.
@@ -26,8 +30,11 @@ type ZookeeperClient interface {
 	// DefaultZookeeperPrefix prepended to the path.
 	Get(path string, i interface{}) error
 
-	// JSON encodes i and writes that value to the path specified with
-	// DefaultZookeeperPrefix prepended to it.
+	// JSON encodes i and creates a new value at that path. If the value already
+	// exists ErrZookeeperNodeExists is returned.
+	Create(path string, i interface{}) error
+
+	// JSON encodes i and writes that value to the path specified.
 	Set(path string, i interface{}) error
 
 	// List all of the child paths under loc. This is considered an absolute path
@@ -55,7 +62,7 @@ func split(str string) (string, uint64) {
 	seq, err := strconv.ParseInt(str[i+1:], 10, 64)
 
 	if err != nil {
-		log.Printf("WARNING: Failed to parse sequence in %v (%s)", str, str[i:])
+		logWarning("Failed to parse sequence in %v (%s)", str, str[i:])
 	} else {
 		res = uint64(seq)
 	}
@@ -116,6 +123,25 @@ func (c *zookeeperClientImpl) Get(loc string, i interface{}) error {
 	}
 
 	return nil
+}
+
+func (c *zookeeperClientImpl) Create(loc string, obj interface{}) (err error) {
+	var b []byte
+	b, err = json.Marshal(obj)
+
+	if err != nil {
+		return
+	}
+
+	c.mkdirs(path.Dir(loc))
+	_, err = c.conn.Create(loc, b, 0, zk.WorldACL(zk.PermAll))
+
+	// Translate this in to a friendlier message for our users.
+	if err == zk.ErrNodeExists {
+		err = ErrZookeeperNodeExists
+	}
+
+	return
 }
 
 func (c *zookeeperClientImpl) Set(loc string, obj interface{}) (err error) {
